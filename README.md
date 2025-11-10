@@ -128,5 +128,4 @@ See the following documents for detailed information:
 - **Vitest** - Testing framework
 
 ## License
-
-MIT
+2026 Discus (C)&TM John Carimando, All Rights Reserved

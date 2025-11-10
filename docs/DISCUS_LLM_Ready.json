@@ -1,0 +1,219 @@
+{
+  "meta": {
+    "title": "Discus",
+    "version": "Draft v1",
+    "authors": {
+      "human": [
+        "User"
+      ],
+      "llm": [
+        "ChatGPT"
+      ]
+    },
+    "purpose": "Comprehensive GDD canon, source of truth for dev and LLM ingestion",
+    "targetAudience": [
+      "designers",
+      "coders",
+      "artists",
+      "marketers",
+      "testers"
+    ],
+    "projectGoals": {
+      "highConcept": "Fast-paced arcade arena game blending Tron-like grids with fighting game timing windows.",
+      "corePillars": [
+        "Fast & Readable",
+        "Skill-Based",
+        "Arcade Authenticity",
+        "LLM-Ready Modularity"
+      ],
+      "successCriteria": [
+        "Stable 60 FPS with 2\u201316 players",
+        "Competitive balance across latency conditions",
+        "Electron Build milestone achieved",
+        "Colorblind accessibility implemented as core requirement"
+      ]
+    }
+  },
+  "mechanics": {
+    "overview": {
+      "session": "3\u20135 min matches, 2\u201316 players",
+      "modes": [
+        "Online Multiplayer",
+        "LAN Multiplayer",
+        "Arcade Mode"
+      ]
+    },
+    "core": {
+      "movement": "8-way joystick or d-pad input, with analog treated as 8 directions.",
+      "discBehavior": [
+        "Threat Mode (disintegrates opponents)",
+        "Inert Mode (returns to owner, passes through objects)",
+        "Bounce off walls/other discs reduces threat time",
+        "Catch returns disc to owner"
+      ],
+      "combat": [
+        "Throw, Charge Throw, Curve Throw",
+        "Block and Perfect Block",
+        "Dodge and Perfect Dodge"
+      ]
+    },
+    "states": {
+      "player": [
+        "Active",
+        "SpawnGuard",
+        "ChargingThrow",
+        "Blocking",
+        "Diving",
+        "Stunned",
+        "Knockback",
+        "Disintegrated",
+        "Reintegration",
+        "Disrupted"
+      ]
+    },
+    "scoring": {
+      "point": "Awarded on disintegration",
+      "mercyEnd": "10 point lead triggers early end",
+      "suddenDeath": "Optional tiebreaker roulette"
+    }
+  },
+  "ux": {
+    "controls": {
+      "responsiveness": "Low latency, lag compensation on parry/dodge windows",
+      "devices": [
+        "Gamepad strongly encouraged",
+        "Keyboard optional"
+      ]
+    },
+    "readability": {
+      "goals": [
+        "Clear disc trails",
+        "Team color costuming",
+        "Outlines for colorblind mode"
+      ]
+    },
+    "accessibility": {
+      "features": [
+        "Colorblind palettes",
+        "Thick black outlines",
+        "Microsoft accessibility baseline (remap, UI scaling, reduced motion)"
+      ]
+    },
+    "menus": {
+      "main": [
+        "Online Multiplayer",
+        "LAN Multiplayer",
+        "Arcade",
+        "Options"
+      ],
+      "options": [
+        "Gamepad remap",
+        "Audio sliders",
+        "Gameplay toggles (team pass-through, threat duration)",
+        "Score/time settings (match duration, mercy threshold, sudden death toggle)"
+      ]
+    }
+  },
+  "content": {
+    "arenas": [
+      "Tile-grid arenas",
+      "Dynamic hazard walls",
+      "Hazard clusters"
+    ],
+    "hazards": [
+      "Regular Wall",
+      "Bouncy Wall",
+      "Bouncy Bumper",
+      "Electric Wall",
+      "Electric Floor",
+      "Conveyor Belt Floor",
+      "Drones"
+    ],
+    "audio": {
+      "formats": [
+        "OGG/Opus for music & SFX",
+        "WAV for ultra-short latency cues"
+      ],
+      "voice": "Arcade-style narrator",
+      "cues": [
+        "Parry ping",
+        "Timer countdown",
+        "Lobby chimes"
+      ]
+    }
+  },
+  "tech": {
+    "engine": "Phaser 3 (Arcade Physics for v1)",
+    "platform": "Web-first, packaged via Electron",
+    "networking": {
+      "stack": "Node.js + Colyseus authoritative server",
+      "tickRate": "60 Hz server tick, 20\u201330 Hz snapshots",
+      "latencyComp": "2\u20133 frames buffer for perfect block/dodge windows"
+    },
+    "tooling": [
+      "Bootstrap UI",
+      "TexturePacker for atlases",
+      "Vite + electron-builder for packaging"
+    ]
+  },
+  "config": {
+    "defaults": {
+      "threatening_duration_s": 5.0,
+      "threat_extend_on_hit_s": 0.75,
+      "spawn_invulnerability_s": 3.0,
+      "dodge_iframes_frames": 3,
+      "dodge_cooldown_s": 10.0,
+      "perfect_block_window_frames": 3,
+      "latency_comp_frames_perfect": 2
+    }
+  },
+  "glossary": {
+    "Player Actions": [
+      "Throw",
+      "Charge Throw",
+      "Curve Throw",
+      "Block",
+      "Perfect Block",
+      "Dodge",
+      "Perfect Dodge",
+      "Respawn",
+      "Taunt pose",
+      "Disrupted pose"
+    ],
+    "Discus States": [
+      "Threat Mode",
+      "Inert Mode",
+      "Threat Time",
+      "Bounce",
+      "Deflection",
+      "Catch",
+      "Stock"
+    ],
+    "Match Terms": [
+      "Point",
+      "Mercy End",
+      "Sudden Death",
+      "Match Timer",
+      "Win/Lose/Tie"
+    ],
+    "Hazards": [
+      "Regular Wall",
+      "Bouncy Wall",
+      "Bouncy Bumper",
+      "Electric Wall",
+      "Electric Floor",
+      "Conveyor Belt Floor",
+      "Drone",
+      "Hazard Clusters",
+      "Dynamic Walls"
+    ],
+    "Modes": [
+      "Arcade Mode",
+      "LAN Multiplayer",
+      "Online Multiplayer",
+      "Waiting Room",
+      "Team Select Zones",
+      "Free For All (FFA)"
+    ]
+  }
+}

@@ -258,9 +258,30 @@ export class GameRoom extends Room<RoomState> {
 
       // Handle actions
       if (input.throwing && player.hasDiscus) {
-        // TODO: Implement discus throwing
-        // For now, just a placeholder
+        // Throw discus in the direction of current input
+        // If no input, use player's facing direction (angle)
+        let throwX = input.moveX;
+        let throwY = input.moveY;
+
+        // If no direction pressed, throw in the direction player is facing
+        if (throwX === 0 && throwY === 0) {
+          throwX = Math.cos(player.angle);
+          throwY = Math.sin(player.angle);
+        }
+
+        // Calculate target point for throw
+        const throwDistance = 100; // Arbitrary distance for direction
+        const targetX = player.x + throwX * throwDistance;
+        const targetY = player.y + throwY * throwDistance;
+
+        // Create discus
+        const discus = this.physicsSystem.throwDiscus(player, targetX, targetY);
+        this.state.discuses.set(discus.id, discus);
+
+        // Player no longer has discus
         player.hasDiscus = false;
+
+        console.log(`Player ${client.sessionId} threw discus ${discus.id} at (${throwX.toFixed(2)}, ${throwY.toFixed(2)})`);
       }
 
       if (input.blocking) {
@@ -342,6 +363,7 @@ export class GameRoom extends Room<RoomState> {
     player.sessionId = client.sessionId;
     player.name = options.name || `Player ${this.clients.length}`;
     player.teamId = options.teamId || 'team1';
+    player.hasDiscus = true; // Players start with a discus
 
     // Spawn position (random for now)
     player.x = 200 + Math.random() * 1520;

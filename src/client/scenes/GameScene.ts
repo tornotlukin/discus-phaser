@@ -244,6 +244,7 @@ export class GameScene extends Scene {
    */
   private sendInput(): void {
     const movement = this.inputManager.getMovement();
+    const fullInput = this.inputManager.getInput();
 
     // Always send movement (even if zero) for smooth server updates
     const input: PlayerInput = {
@@ -251,9 +252,9 @@ export class GameScene extends Scene {
       timestamp: Date.now(),
       moveX: movement.x,
       moveY: movement.y,
-      throwing: false, // TODO: Implement throwing
-      blocking: false,
-      dodging: false
+      throwing: fullInput?.throwing || false,
+      blocking: fullInput?.blocking || false,
+      dodging: fullInput?.dodging || false
     };
 
     this.room.send('input', input);

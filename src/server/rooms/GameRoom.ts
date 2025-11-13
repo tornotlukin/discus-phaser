@@ -99,7 +99,8 @@ export class GameRoom extends Room<RoomState> {
       discusSpeed: 400,
       discusRadius: 8,
       arenaWidth: 1920,
-      arenaHeight: 1080
+      arenaHeight: 1080,
+      borderWidth: 10
     });
 
     this.collisionSystem = new CollisionSystem(this.eventBus, 16, 8);

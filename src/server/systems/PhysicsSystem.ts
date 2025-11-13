@@ -24,6 +24,7 @@ export interface PhysicsConfig {
   discusRadius: number;
   arenaWidth: number;
   arenaHeight: number;
+  borderWidth: number;
 }
 
 export class PhysicsSystem {
@@ -100,10 +101,16 @@ export class PhysicsSystem {
       player.x += player.velocityX * deltaTime;
       player.y += player.velocityY * deltaTime;
 
-      // Clamp to arena bounds
+      // Clamp to arena bounds (accounting for border)
       const radius = this.config.playerRadius;
-      player.x = this.clamp(player.x, radius, this.config.arenaWidth - radius);
-      player.y = this.clamp(player.y, radius, this.config.arenaHeight - radius);
+      const border = this.config.borderWidth;
+      const minX = border + radius;
+      const maxX = this.config.arenaWidth - border - radius;
+      const minY = border + radius;
+      const maxY = this.config.arenaHeight - border - radius;
+
+      player.x = this.clamp(player.x, minX, maxX);
+      player.y = this.clamp(player.y, minY, maxY);
 
       // Update state based on velocity
       if (Math.abs(player.velocityX) < 1 && Math.abs(player.velocityY) < 1) {
@@ -116,6 +123,63 @@ export class PhysicsSystem {
         }
       }
     });
+
+    // Resolve player-player collisions
+    this.resolvePlayerCollisions(players);
+  }
+
+  /**
+   * Resolve player-player collisions
+   * Pushes overlapping players apart
+   */
+  private resolvePlayerCollisions(players: MapSchema<PlayerSchema>): void {
+    const playerArray = Array.from(players.values());
+
+    // Check all pairs of players
+    for (let i = 0; i < playerArray.length; i++) {
+      const player1 = playerArray[i];
+
+      // Skip inactive players
+      if (player1.state === 'disintegrated' || player1.state === 'disrupted') {
+        continue;
+      }
+
+      for (let j = i + 1; j < playerArray.length; j++) {
+        const player2 = playerArray[j];
+
+        // Skip inactive players
+        if (player2.state === 'disintegrated' || player2.state === 'disrupted') {
+          continue;
+        }
+
+        // Check for collision
+        const dx = player2.x - player1.x;
+        const dy = player2.y - player1.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const minDistance = this.config.playerRadius * 2;
+
+        if (distance < minDistance && distance > 0) {
+          // Calculate overlap
+          const overlap = minDistance - distance;
+
+          // Calculate push direction (normalized)
+          const pushX = (dx / distance) * overlap * 0.5;
+          const pushY = (dy / distance) * overlap * 0.5;
+
+          // Push players apart
+          player1.x -= pushX;
+          player1.y -= pushY;
+          player2.x += pushX;
+          player2.y += pushY;
+
+          // Also dampen their velocities to prevent jitter
+          player1.velocityX *= 0.5;
+          player1.velocityY *= 0.5;
+          player2.velocityX *= 0.5;
+          player2.velocityY *= 0.5;
+        }
+      }
+    }
   }
 
   /**
@@ -140,15 +204,21 @@ export class PhysicsSystem {
         discus.velocityY *= 0.5;
       }
 
-      // Bounce off arena walls
+      // Bounce off arena walls (accounting for border)
       const radius = this.config.discusRadius;
-      if (discus.x - radius < 0 || discus.x + radius > this.config.arenaWidth) {
+      const border = this.config.borderWidth;
+      const minX = border + radius;
+      const maxX = this.config.arenaWidth - border - radius;
+      const minY = border + radius;
+      const maxY = this.config.arenaHeight - border - radius;
+
+      if (discus.x < minX || discus.x > maxX) {
         discus.velocityX *= -1;
-        discus.x = this.clamp(discus.x, radius, this.config.arenaWidth - radius);
+        discus.x = this.clamp(discus.x, minX, maxX);
       }
-      if (discus.y - radius < 0 || discus.y + radius > this.config.arenaHeight) {
+      if (discus.y < minY || discus.y > maxY) {
         discus.velocityY *= -1;
-        discus.y = this.clamp(discus.y, radius, this.config.arenaHeight - radius);
+        discus.y = this.clamp(discus.y, minY, maxY);
       }
     });
   }

@@ -1,0 +1,45 @@
+{
+  "server": {
+    "url": "ws://localhost:2567",
+    "roomName": "game"
+  },
+  "rendering": {
+    "gameWidth": 1920,
+    "gameHeight": 1080,
+    "borderWidth": 10,
+    "backgroundColor": "#1a1a1a",
+    "borderColor": "#ffffff"
+  },
+  "player": {
+    "width": 32,
+    "height": 32,
+    "color": "#00ff00",
+    "player2Color": "#ff0000"
+  },
+  "discus": {
+    "radius": 8,
+    "color": "#ffff00",
+    "inertColor": "#888888"
+  },
+  "input": {
+    "keyboard": {
+      "enabled": true,
+      "moveUp": "W",
+      "moveDown": "S",
+      "moveLeft": "A",
+      "moveRight": "D",
+      "throw": "SPACE",
+      "block": "SHIFT",
+      "dodge": "CTRL"
+    },
+    "gamepad": {
+      "enabled": true,
+      "deadzone": 0.2
+    }
+  },
+  "network": {
+    "interpolationDelay": 100,
+    "reconciliationThreshold": 5,
+    "showDebugInfo": true
+  }
+}

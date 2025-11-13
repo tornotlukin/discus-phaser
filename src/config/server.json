@@ -1,0 +1,33 @@
+{
+  "server": {
+    "port": 2567,
+    "maxRooms": 10,
+    "clientOrigin": "http://localhost:5173",
+    "tickRate": 60,
+    "snapshotRate": 20,
+    "disconnectTimeout": 30000
+  },
+  "physics": {
+    "playerSpeed": 200,
+    "playerAcceleration": 800,
+    "playerFriction": 600,
+    "playerRadius": 16,
+    "discusSpeed": 400,
+    "discusRadius": 8,
+    "arenaWidth": 1920,
+    "arenaHeight": 1080
+  },
+  "gameplay": {
+    "defaultMatchDuration": 180,
+    "defaultMercyRuleThreshold": 10,
+    "defaultSuddenDeathEnabled": true,
+    "minPlayers": 2,
+    "maxPlayersPerRoom": 16,
+    "threatDuration": 3000,
+    "respawnDelay": 3000
+  },
+  "validation": {
+    "inputRateLimit": 10,
+    "timestampTolerance": 5000
+  }
+}

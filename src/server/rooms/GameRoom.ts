@@ -95,7 +95,8 @@ export class GameRoom extends Room<RoomState> {
       playerSpeed: 200,
       playerAcceleration: 800,
       playerFriction: 600,
-      playerRadius: 16,
+      playerWidth: 32,
+      playerHeight: 32,
       discusSpeed: 400,
       discusRadius: 8,
       arenaWidth: 1920,
@@ -103,7 +104,7 @@ export class GameRoom extends Room<RoomState> {
       borderWidth: 10
     });
 
-    this.collisionSystem = new CollisionSystem(this.eventBus, 16, 8);
+    this.collisionSystem = new CollisionSystem(this.eventBus, 32, 32, 8);
     this.scoreSystem = new ScoreSystem(this.eventBus);
     this.matchTimer = new MatchTimer(this.eventBus);
     this.inputValidator = new InputValidator(this.eventBus);
@@ -196,11 +197,12 @@ export class GameRoom extends Room<RoomState> {
       // Update physics system configuration
       this.physicsSystem.updateConfig(config);
 
-      // Update collision system if radius changed
-      if (config.playerRadius !== undefined || config.discusRadius !== undefined) {
+      // Update collision system if dimensions changed
+      if (config.playerWidth !== undefined || config.playerHeight !== undefined || config.discusRadius !== undefined) {
         const currentConfig = this.physicsSystem['config'];
-        this.collisionSystem.updateRadii(
-          config.playerRadius ?? currentConfig.playerRadius,
+        this.collisionSystem.updateDimensions(
+          config.playerWidth ?? currentConfig.playerWidth,
+          config.playerHeight ?? currentConfig.playerHeight,
           config.discusRadius ?? currentConfig.discusRadius
         );
       }

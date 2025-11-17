@@ -19,7 +19,8 @@ export interface PhysicsConfig {
   playerSpeed: number;
   playerAcceleration: number;
   playerFriction: number;
-  playerRadius: number;
+  playerWidth: number;
+  playerHeight: number;
   discusSpeed: number;
   discusRadius: number;
   arenaWidth: number;
@@ -102,12 +103,14 @@ export class PhysicsSystem {
       player.y += player.velocityY * deltaTime;
 
       // Clamp to arena bounds (accounting for border)
-      const radius = this.config.playerRadius;
+      // Rectangle collision: position is center, so use half width/height
+      const halfWidth = this.config.playerWidth / 2;
+      const halfHeight = this.config.playerHeight / 2;
       const border = this.config.borderWidth;
-      const minX = border + radius;
-      const maxX = this.config.arenaWidth - border - radius;
-      const minY = border + radius;
-      const maxY = this.config.arenaHeight - border - radius;
+      const minX = border + halfWidth;
+      const maxX = this.config.arenaWidth - border - halfWidth;
+      const minY = border + halfHeight;
+      const maxY = this.config.arenaHeight - border - halfHeight;
 
       player.x = this.clamp(player.x, minX, maxX);
       player.y = this.clamp(player.y, minY, maxY);
@@ -130,10 +133,12 @@ export class PhysicsSystem {
 
   /**
    * Resolve player-player collisions
-   * Pushes overlapping players apart
+   * Pushes overlapping rectangles apart using AABB collision
    */
   private resolvePlayerCollisions(players: MapSchema<PlayerSchema>): void {
     const playerArray = Array.from(players.values());
+    const halfWidth = this.config.playerWidth / 2;
+    const halfHeight = this.config.playerHeight / 2;
 
     // Check all pairs of players
     for (let i = 0; i < playerArray.length; i++) {
@@ -152,31 +157,44 @@ export class PhysicsSystem {
           continue;
         }
 
-        // Check for collision
-        const dx = player2.x - player1.x;
-        const dy = player2.y - player1.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const minDistance = this.config.playerRadius * 2;
+        // AABB collision detection (rectangles)
+        const dx = Math.abs(player2.x - player1.x);
+        const dy = Math.abs(player2.y - player1.y);
 
-        if (distance < minDistance && distance > 0) {
-          // Calculate overlap
-          const overlap = minDistance - distance;
+        // Check if rectangles overlap
+        if (dx < this.config.playerWidth && dy < this.config.playerHeight) {
+          // Calculate overlap on each axis
+          const overlapX = this.config.playerWidth - dx;
+          const overlapY = this.config.playerHeight - dy;
 
-          // Calculate push direction (normalized)
-          const pushX = (dx / distance) * overlap * 0.5;
-          const pushY = (dy / distance) * overlap * 0.5;
-
-          // Push players apart
-          player1.x -= pushX;
-          player1.y -= pushY;
-          player2.x += pushX;
-          player2.y += pushY;
-
-          // Also dampen their velocities to prevent jitter
-          player1.velocityX *= 0.5;
-          player1.velocityY *= 0.5;
-          player2.velocityX *= 0.5;
-          player2.velocityY *= 0.5;
+          // Push apart on the axis with smallest overlap (minimum translation vector)
+          if (overlapX < overlapY) {
+            // Push apart horizontally
+            const pushX = overlapX * 0.5;
+            if (player2.x > player1.x) {
+              player1.x -= pushX;
+              player2.x += pushX;
+            } else {
+              player1.x += pushX;
+              player2.x -= pushX;
+            }
+            // Dampen horizontal velocity
+            player1.velocityX *= 0.5;
+            player2.velocityX *= 0.5;
+          } else {
+            // Push apart vertically
+            const pushY = overlapY * 0.5;
+            if (player2.y > player1.y) {
+              player1.y -= pushY;
+              player2.y += pushY;
+            } else {
+              player1.y += pushY;
+              player2.y -= pushY;
+            }
+            // Dampen vertical velocity
+            player1.velocityY *= 0.5;
+            player2.velocityY *= 0.5;
+          }
         }
       }
     }

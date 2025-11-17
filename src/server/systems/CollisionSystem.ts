@@ -22,12 +22,14 @@ export interface CollisionEvent {
 
 export class CollisionSystem {
   private eventBus: EventBus;
-  private playerRadius: number;
+  private playerWidth: number;
+  private playerHeight: number;
   private discusRadius: number;
 
-  constructor(eventBus: EventBus, playerRadius: number, discusRadius: number) {
+  constructor(eventBus: EventBus, playerWidth: number, playerHeight: number, discusRadius: number) {
     this.eventBus = eventBus;
-    this.playerRadius = playerRadius;
+    this.playerWidth = playerWidth;
+    this.playerHeight = playerHeight;
     this.discusRadius = discusRadius;
   }
 
@@ -57,10 +59,10 @@ export class CollisionSystem {
           return;
         }
 
-        // Check circle-circle collision
-        if (this.checkCircleCollision(
-          player.x, player.y, this.playerRadius,
-          discus.x, discus.y, this.discusRadius
+        // Check circle-rectangle collision (discus vs player)
+        if (this.checkCircleRectangleCollision(
+          discus.x, discus.y, this.discusRadius,
+          player.x, player.y, this.playerWidth, this.playerHeight
         )) {
           const event: CollisionEvent = {
             type: GameEvents.DISCUS_HIT_PLAYER,
@@ -83,18 +85,26 @@ export class CollisionSystem {
   }
 
   /**
-   * Circle-circle collision detection
+   * Circle-rectangle collision detection
+   * Circle is the discus, rectangle is the player
    */
-  private checkCircleCollision(
-    x1: number, y1: number, r1: number,
-    x2: number, y2: number, r2: number
+  private checkCircleRectangleCollision(
+    circleX: number, circleY: number, radius: number,
+    rectX: number, rectY: number, rectWidth: number, rectHeight: number
   ): boolean {
-    const dx = x1 - x2;
-    const dy = y1 - y2;
-    const distanceSquared = dx * dx + dy * dy;
-    const radiusSum = r1 + r2;
+    // Find the closest point on the rectangle to the circle
+    const halfWidth = rectWidth / 2;
+    const halfHeight = rectHeight / 2;
 
-    return distanceSquared < (radiusSum * radiusSum);
+    const closestX = Math.max(rectX - halfWidth, Math.min(circleX, rectX + halfWidth));
+    const closestY = Math.max(rectY - halfHeight, Math.min(circleY, rectY + halfHeight));
+
+    // Calculate distance from closest point to circle center
+    const dx = circleX - closestX;
+    const dy = circleY - closestY;
+    const distanceSquared = dx * dx + dy * dy;
+
+    return distanceSquared < (radius * radius);
   }
 
   /**
@@ -121,10 +131,11 @@ export class CollisionSystem {
   }
 
   /**
-   * Update collision radii
+   * Update collision dimensions
    */
-  updateRadii(playerRadius: number, discusRadius: number): void {
-    this.playerRadius = playerRadius;
+  updateDimensions(playerWidth: number, playerHeight: number, discusRadius: number): void {
+    this.playerWidth = playerWidth;
+    this.playerHeight = playerHeight;
     this.discusRadius = discusRadius;
   }
 }

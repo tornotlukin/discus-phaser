@@ -132,13 +132,22 @@ export class GameScene extends Scene {
         category: 'Movement'
       },
       {
-        key: 'playerRadius',
-        label: 'Player Radius',
-        value: 16,
+        key: 'playerWidth',
+        label: 'Player Width (px)',
+        value: 32,
         min: 8,
-        max: 50,
+        max: 100,
         step: 1,
-        category: 'Size'
+        category: 'Player Size'
+      },
+      {
+        key: 'playerHeight',
+        label: 'Player Height (px)',
+        value: 32,
+        min: 8,
+        max: 100,
+        step: 1,
+        category: 'Player Size'
       },
       {
         key: 'discusSpeed',
@@ -151,12 +160,12 @@ export class GameScene extends Scene {
       },
       {
         key: 'discusRadius',
-        label: 'Discus Radius',
+        label: 'Discus Radius (px)',
         value: 8,
         min: 4,
         max: 30,
         step: 1,
-        category: 'Size'
+        category: 'Discus Size'
       }
     ]);
 

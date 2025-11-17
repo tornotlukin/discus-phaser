@@ -5,6 +5,7 @@ import { PlayerSchema } from '../../shared/schemas/PlayerSchema';
 import { DiscusSchema } from '../../shared/schemas/DiscusSchema';
 import { InputManager } from '../systems/InputManager';
 import { PlayerInput } from '../../shared/types/InputTypes';
+import { SettingsPanel } from '../ui/SettingsPanel';
 import clientConfig from '../../config/client.json';
 
 /**
@@ -22,6 +23,9 @@ export class GameScene extends Scene {
 
   // Input
   private inputManager!: InputManager;
+
+  // UI
+  private settingsPanel!: SettingsPanel;
 
   // Rendering
   private border!: Phaser.GameObjects.Graphics;
@@ -67,6 +71,9 @@ export class GameScene extends Scene {
     // Setup input
     this.inputManager = new InputManager(this);
 
+    // Setup developer settings panel
+    this.setupSettingsPanel();
+
     // Connect to server
     this.connectToServer();
   }
@@ -87,6 +94,81 @@ export class GameScene extends Scene {
       this.renderConfig.gameWidth,
       this.renderConfig.gameHeight
     );
+  }
+
+  /**
+   * Setup developer settings panel (CTRL+SHIFT+S)
+   */
+  private setupSettingsPanel(): void {
+    this.settingsPanel = new SettingsPanel();
+
+    // Register physics settings
+    this.settingsPanel.registerSettings([
+      {
+        key: 'playerSpeed',
+        label: 'Player Speed',
+        value: 200,
+        min: 0,
+        max: 1000,
+        step: 10,
+        category: 'Movement'
+      },
+      {
+        key: 'playerAcceleration',
+        label: 'Player Acceleration',
+        value: 800,
+        min: 0,
+        max: 2000,
+        step: 50,
+        category: 'Movement'
+      },
+      {
+        key: 'playerFriction',
+        label: 'Player Friction',
+        value: 600,
+        min: 0,
+        max: 2000,
+        step: 50,
+        category: 'Movement'
+      },
+      {
+        key: 'playerRadius',
+        label: 'Player Radius',
+        value: 16,
+        min: 8,
+        max: 50,
+        step: 1,
+        category: 'Size'
+      },
+      {
+        key: 'discusSpeed',
+        label: 'Discus Speed',
+        value: 400,
+        min: 0,
+        max: 1000,
+        step: 10,
+        category: 'Discus'
+      },
+      {
+        key: 'discusRadius',
+        label: 'Discus Radius',
+        value: 8,
+        min: 4,
+        max: 30,
+        step: 1,
+        category: 'Size'
+      }
+    ]);
+
+    // Handle setting changes
+    this.settingsPanel.onChange((key: string, value: number) => {
+      console.log(`⚙️ Setting changed: ${key} = ${value}`);
+
+      // Send to server
+      if (this.room) {
+        this.room.send('updateConfig', { [key]: value });
+      }
+    });
   }
 
   /**
@@ -152,6 +234,16 @@ export class GameScene extends Scene {
     // Match start
     this.room.onMessage('matchStart', () => {
       console.log('🎮 Match started!');
+    });
+
+    // Config updated (from dev settings)
+    this.room.onMessage('configUpdated', (config: Record<string, number>) => {
+      console.log('⚙️ Config updated from server:', config);
+
+      // Update settings panel to reflect new values
+      Object.entries(config).forEach(([key, value]) => {
+        this.settingsPanel.updateSetting(key, value);
+      });
     });
   }
 

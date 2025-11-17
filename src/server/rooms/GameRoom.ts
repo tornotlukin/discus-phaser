@@ -189,6 +189,26 @@ export class GameRoom extends Room<RoomState> {
       }
     });
 
+    // Update config message (for dev settings panel)
+    this.onMessage('updateConfig', (client, config: Record<string, number>) => {
+      console.log(`⚙️ Updating config from ${client.sessionId}:`, config);
+
+      // Update physics system configuration
+      this.physicsSystem.updateConfig(config);
+
+      // Update collision system if radius changed
+      if (config.playerRadius !== undefined || config.discusRadius !== undefined) {
+        const currentConfig = this.physicsSystem['config'];
+        this.collisionSystem.updateRadii(
+          config.playerRadius ?? currentConfig.playerRadius,
+          config.discusRadius ?? currentConfig.discusRadius
+        );
+      }
+
+      // Broadcast config update to all clients
+      this.broadcast('configUpdated', config);
+    });
+
     // Ping/pong for latency measurement
     this.onMessage('ping', (client, message) => {
       client.send('pong', { timestamp: message.timestamp });

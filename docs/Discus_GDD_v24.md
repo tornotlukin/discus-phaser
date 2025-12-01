@@ -1,6 +1,6 @@
 # DISCUS --- GAME DESIGN DOCUMENT
 
-### Version 23
+### Version 24
 
 ## 1) METADATA & PURPOSE
 

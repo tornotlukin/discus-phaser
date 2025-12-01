@@ -2,7 +2,22 @@
   "permissions": {
     "allow": [
       "Bash(mkdir:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(dir \"C:\\Work\\discus-phaser\")",
+      "Bash(dir:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm install)",
+      "Bash(npm view:*)",
+      "Bash(npm install:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node -e:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:client:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

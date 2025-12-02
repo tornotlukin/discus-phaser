@@ -21,8 +21,9 @@ export class GameScene extends Scene {
   public latencyText!: GameObjects.Text;
   public scoreText!: GameObjects.Text;
   public statusText!: GameObjects.Text;
+  public controlsText!: GameObjects.Text;
 
-  // Input keys - exposed for rebinding
+  // Keyboard keys - exposed for rebinding
   public keys!: {
     up: Input.Keyboard.Key;
     down: Input.Keyboard.Key;
@@ -31,14 +32,26 @@ export class GameScene extends Scene {
     throw: Input.Keyboard.Key;
   };
 
+  // Gamepad reference
+  public gamepad: Phaser.Input.Gamepad.Gamepad | null = null;
+  public gamepadIndex: number = -1;
+
   // Input state
   private lastInputX: number = 0;
   private lastInputY: number = 0;
   private canThrow: boolean = true;
+  private lastThrowButtonState: boolean = false;
 
-  // Mouse position for aiming
+  // Game state
+  public waitingForStart: boolean = true;
+
+  // Mouse position for aiming (keyboard/mouse mode)
   public mouseX: number = 0;
   public mouseY: number = 0;
+
+  // Throw direction for gamepad (based on last movement direction)
+  public aimX: number = 1;
+  public aimY: number = 0;
 
   constructor() {
     super({ key: "GameScene" });
@@ -54,8 +67,8 @@ export class GameScene extends Scene {
     // Setup UI
     this.createUI();
 
-    // Connect to server
-    this.connectToServer();
+    // Show "Press START" message
+    this.showWaitingForStart();
   }
 
   private createArena(): void {
@@ -86,16 +99,17 @@ export class GameScene extends Scene {
   }
 
   private setupInput(): void {
-    // Keyboard
+    // Keyboard (P1 bindings)
+    const kb = CONFIG.input.keyboard.p1;
     this.keys = {
-      up: this.input.keyboard!.addKey(CONFIG.input.up),
-      down: this.input.keyboard!.addKey(CONFIG.input.down),
-      left: this.input.keyboard!.addKey(CONFIG.input.left),
-      right: this.input.keyboard!.addKey(CONFIG.input.right),
-      throw: this.input.keyboard!.addKey(CONFIG.input.throw),
+      up: this.input.keyboard!.addKey(kb.up),
+      down: this.input.keyboard!.addKey(kb.down),
+      left: this.input.keyboard!.addKey(kb.left),
+      right: this.input.keyboard!.addKey(kb.right),
+      throw: this.input.keyboard!.addKey(kb.throw),
     };
 
-    // Mouse tracking
+    // Mouse tracking (for keyboard/mouse mode)
     this.input.on("pointermove", (pointer: Input.Pointer) => {
       this.mouseX = pointer.x;
       this.mouseY = pointer.y;
@@ -103,15 +117,46 @@ export class GameScene extends Scene {
 
     // Mouse click to throw
     this.input.on("pointerdown", (pointer: Input.Pointer) => {
-      if (pointer.leftButtonDown()) {
+      if (pointer.leftButtonDown() && !this.waitingForStart) {
         this.handleThrow();
       }
     });
 
-    // Spacebar throw
+    // Keyboard throw
     this.keys.throw.on("down", () => {
-      this.handleThrow();
+      if (!this.waitingForStart) {
+        this.handleThrow();
+      }
     });
+
+    // Keyboard START (Enter key to join)
+    this.input.keyboard!.on("keydown-ENTER", () => {
+      if (this.waitingForStart) {
+        this.joinGame();
+      }
+    });
+
+    // Gamepad setup
+    if (this.input.gamepad) {
+      // Listen for gamepad connection
+      this.input.gamepad.on("connected", (pad: Phaser.Input.Gamepad.Gamepad) => {
+        if (!this.gamepad) {
+          this.gamepad = pad;
+          this.gamepadIndex = pad.index;
+          console.log(`Gamepad connected: ${pad.id} (index ${pad.index})`);
+          this.updateControlsText();
+        }
+      });
+
+      // Check if gamepad already connected
+      if (this.input.gamepad.total > 0) {
+        this.gamepad = this.input.gamepad.getPad(0);
+        if (this.gamepad) {
+          this.gamepadIndex = this.gamepad.index;
+          console.log(`Gamepad already connected: ${this.gamepad.id}`);
+        }
+      }
+    }
   }
 
   private createUI(): void {
@@ -124,7 +169,7 @@ export class GameScene extends Scene {
     };
 
     // Status text (top center)
-    this.statusText = this.add.text(CONFIG.display.width / 2, 20, "Connecting...", {
+    this.statusText = this.add.text(CONFIG.display.width / 2, 20, "", {
       ...style,
       fontSize: "16px",
     });
@@ -137,6 +182,13 @@ export class GameScene extends Scene {
     });
     this.scoreText.setOrigin(0.5, 0);
 
+    // Controls text (bottom center)
+    this.controlsText = this.add.text(CONFIG.display.width / 2, CONFIG.display.height - 30, "", {
+      ...style,
+      fontSize: "12px",
+    });
+    this.controlsText.setOrigin(0.5, 0.5);
+
     // FPS counter (top left)
     if (CONFIG.debug.showFPS) {
       this.fpsText = this.add.text(10, 10, "FPS: --", style);
@@ -146,6 +198,36 @@ export class GameScene extends Scene {
     if (CONFIG.debug.showLatency) {
       this.latencyText = this.add.text(10, 30, "Ping: --", style);
     }
+  }
+
+  private showWaitingForStart(): void {
+    this.waitingForStart = true;
+    this.statusText.setText("PRESS START TO JOIN");
+    this.statusText.setAlpha(1);
+    this.updateControlsText();
+  }
+
+  private updateControlsText(): void {
+    if (this.waitingForStart) {
+      if (this.gamepad) {
+        this.controlsText.setText("Gamepad detected - Press START button");
+      } else {
+        this.controlsText.setText("No gamepad - Press ENTER or connect a controller");
+      }
+    } else {
+      if (this.gamepad) {
+        this.controlsText.setText("D-PAD: Move | A: Throw");
+      } else {
+        this.controlsText.setText("WASD: Move | SPACE/Click: Throw");
+      }
+    }
+  }
+
+  private async joinGame(): Promise<void> {
+    this.waitingForStart = false;
+    this.statusText.setText("Connecting...");
+    this.updateControlsText();
+    await this.connectToServer();
   }
 
   private async connectToServer(): Promise<void> {
@@ -189,8 +271,6 @@ export class GameScene extends Scene {
     this.network.onPlayerHit = (data) => {
       // Flash effect on hit
       this.cameras.main.flash(100, 255, 255, 255, false);
-
-      // Could add more hit effects here
       console.log(`${data.hitPlayerId} was hit by ${data.byPlayerId}`);
     };
 
@@ -240,13 +320,26 @@ export class GameScene extends Scene {
   }
 
   private handleThrow(): void {
-    if (!this.network.connected || !this.canThrow) return;
+    if (!this.network?.connected || !this.canThrow) return;
 
     const localPlayer = this.network.getLocalPlayer();
     if (!localPlayer || !localPlayer.hasDisc) return;
 
-    // Throw toward mouse position
-    this.network.sendThrow(this.mouseX, this.mouseY);
+    // Determine throw target
+    let targetX: number;
+    let targetY: number;
+
+    if (this.gamepad) {
+      // Gamepad: throw in aim direction (last movement direction)
+      targetX = localPlayer.x + this.aimX * 200;
+      targetY = localPlayer.y + this.aimY * 200;
+    } else {
+      // Keyboard/Mouse: throw toward mouse
+      targetX = this.mouseX;
+      targetY = this.mouseY;
+    }
+
+    this.network.sendThrow(targetX, targetY);
 
     // Brief cooldown to prevent spam
     this.canThrow = false;
@@ -259,6 +352,7 @@ export class GameScene extends Scene {
     const playerCount = this.players.size;
     if (playerCount < 2) {
       this.statusText.setText(`Waiting for opponent... (${playerCount}/2)`);
+      this.statusText.setAlpha(1);
     } else {
       this.statusText.setText("FIGHT!");
       // Fade out status after game starts
@@ -284,6 +378,12 @@ export class GameScene extends Scene {
       this.fpsText.setText(`FPS: ${Math.round(this.game.loop.actualFps)}`);
     }
 
+    // Check for gamepad START button when waiting
+    if (this.waitingForStart) {
+      this.checkGamepadStart();
+      return;
+    }
+
     // Process input and send to server
     this.processInput();
 
@@ -293,17 +393,80 @@ export class GameScene extends Scene {
     });
   }
 
+  private checkGamepadStart(): void {
+    if (!this.gamepad) {
+      // Check if a gamepad is now available
+      if (this.input.gamepad && this.input.gamepad.total > 0) {
+        this.gamepad = this.input.gamepad.getPad(0);
+        if (this.gamepad) {
+          this.gamepadIndex = this.gamepad.index;
+          this.updateControlsText();
+        }
+      }
+      return;
+    }
+
+    // Check START button (index 9)
+    const startButton = this.gamepad.buttons[CONFIG.input.gamepad.startButton];
+    if (startButton && startButton.pressed) {
+      this.joinGame();
+    }
+  }
+
   private processInput(): void {
-    if (!this.network.connected) return;
+    if (!this.network?.connected) return;
 
     let inputX = 0;
     let inputY = 0;
 
-    // Read keyboard input
-    if (this.keys.left.isDown) inputX -= 1;
-    if (this.keys.right.isDown) inputX += 1;
-    if (this.keys.up.isDown) inputY -= 1;
-    if (this.keys.down.isDown) inputY += 1;
+    // Check gamepad input first
+    if (this.gamepad) {
+      const gp = CONFIG.input.gamepad;
+      const deadzone = gp.deadzone;
+
+      // D-pad buttons (indices 12-15)
+      if (this.gamepad.buttons[gp.dpadUp]?.pressed) inputY -= 1;
+      if (this.gamepad.buttons[gp.dpadDown]?.pressed) inputY += 1;
+      if (this.gamepad.buttons[gp.dpadLeft]?.pressed) inputX -= 1;
+      if (this.gamepad.buttons[gp.dpadRight]?.pressed) inputX += 1;
+
+      // Also check left stick as fallback
+      if (inputX === 0 && inputY === 0) {
+        const stickX = this.gamepad.leftStick?.x ?? 0;
+        const stickY = this.gamepad.leftStick?.y ?? 0;
+
+        if (Math.abs(stickX) > deadzone) inputX = stickX > 0 ? 1 : -1;
+        if (Math.abs(stickY) > deadzone) inputY = stickY > 0 ? 1 : -1;
+      }
+
+      // Update aim direction when moving
+      if (inputX !== 0 || inputY !== 0) {
+        this.aimX = inputX;
+        this.aimY = inputY;
+        // Normalize
+        const mag = Math.sqrt(this.aimX * this.aimX + this.aimY * this.aimY);
+        if (mag > 0) {
+          this.aimX /= mag;
+          this.aimY /= mag;
+        }
+      }
+
+      // Check A button for throw (with edge detection)
+      const throwButton = this.gamepad.buttons[gp.throwButton];
+      const throwPressed = throwButton?.pressed ?? false;
+
+      if (throwPressed && !this.lastThrowButtonState) {
+        this.handleThrow();
+      }
+      this.lastThrowButtonState = throwPressed;
+
+    } else {
+      // Keyboard input
+      if (this.keys.left.isDown) inputX -= 1;
+      if (this.keys.right.isDown) inputX += 1;
+      if (this.keys.up.isDown) inputY -= 1;
+      if (this.keys.down.isDown) inputY += 1;
+    }
 
     // Only send if input changed
     if (inputX !== this.lastInputX || inputY !== this.lastInputY) {
@@ -319,11 +482,12 @@ export class GameScene extends Scene {
   setArenaColors(floor: number, wall: number): void {
     CONFIG.arena.floorColor = floor;
     CONFIG.arena.wallColor = wall;
-    this.createArena(); // Redraw
+    this.createArena();
   }
 
   // Get local player entity
   getLocalPlayer(): Player | undefined {
+    if (!this.network) return undefined;
     return this.players.get(this.network.sessionId);
   }
 

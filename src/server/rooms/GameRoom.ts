@@ -15,9 +15,10 @@ const DISC_RETURN_SPEED = 500;
 const DISC_BOUNCE_DAMPING = 1.0;      // 1.0 = no energy loss, 0.9 = 10% loss per bounce
 
 // Threat timing (in milliseconds)
-const THREAT_DURATION = 30000;         // 30 seconds before becoming inert
+const THREAT_DURATION = 5000;          // 5 seconds for testing (change to 30000 for production)
 const THREAT_EXTEND_ON_HIT = 5000;     // Extend threat time by 5 sec on hit
 const CATCH_DISTANCE = 30;             // Distance to catch disc
+const THROW_GRACE_PERIOD = 300;        // ms before owner can catch their own disc
 
 interface PlayerInput {
   x: number; // -1, 0, or 1
@@ -28,6 +29,7 @@ export class GameRoom extends Room<RoomState> {
   maxClients = 2;
   private tickInterval!: ReturnType<typeof setInterval>;
   private lastTickTime: number = Date.now();
+  private discThrowTimes: Map<string, number> = new Map(); // Track when each disc was thrown
 
   onCreate(): void {
     this.setState(new RoomState());
@@ -127,6 +129,9 @@ export class GameRoom extends Room<RoomState> {
     disc.state = "threat";
     disc.threatTimeRemaining = disc.threatTimeMax;
     player.hasDisc = false;
+
+    // Record throw time for grace period
+    this.discThrowTimes.set(disc.id, Date.now());
   }
 
   private tick(): void {
@@ -359,6 +364,12 @@ export class GameRoom extends Room<RoomState> {
       const owner = this.state.players.get(disc.ownerId);
       if (!owner) return;
 
+      // Check grace period - can't catch immediately after throwing
+      const throwTime = this.discThrowTimes.get(disc.id) ?? 0;
+      if (Date.now() - throwTime < THROW_GRACE_PERIOD) {
+        return; // Still in grace period, can't catch yet
+      }
+
       // Check if owner can catch
       const dx = disc.x - owner.x;
       const dy = disc.y - owner.y;
@@ -370,6 +381,7 @@ export class GameRoom extends Room<RoomState> {
         disc.velocityY = 0;
         disc.threatTimeRemaining = 0;
         owner.hasDisc = true;
+        this.discThrowTimes.delete(disc.id); // Clear throw time
         console.log(`Player ${owner.sessionId} caught their disc`);
       }
     });

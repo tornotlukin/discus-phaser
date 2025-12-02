@@ -17,7 +17,8 @@
       "Bash(npm run dev:client:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

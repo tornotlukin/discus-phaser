@@ -55,13 +55,21 @@ export const CONFIG = {
       p1: { up: "W", down: "S", left: "A", right: "D", throw: "SPACE" },
       p2: { up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", throw: "ENTER" },
     },
-    // Gamepad settings
+    // Gamepad settings (Xbox-style button indices)
     gamepad: {
-      deadzone: 0.2,           // Stick deadzone
-      // Button mappings (Xbox-style indices)
-      throwButton: 0,          // A button
-      blockButton: 1,          // B button (future)
-      dashButton: 2,           // X button (future)
+      deadzone: 0.2,           // D-pad/stick deadzone
+      // Button indices (standard gamepad mapping)
+      // https://w3c.github.io/gamepad/#remapping
+      throwButton: 0,          // A button (index 0)
+      blockButton: 1,          // B button (index 1) - future
+      dashButton: 2,           // X button (index 2) - future
+      startButton: 9,          // START button (index 9)
+      // D-pad axes (some controllers use axes, some use buttons)
+      // Buttons 12-15 are D-pad: Up=12, Down=13, Left=14, Right=15
+      dpadUp: 12,
+      dpadDown: 13,
+      dpadLeft: 14,
+      dpadRight: 15,
     },
   },
 
